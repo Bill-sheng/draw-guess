@@ -23,6 +23,27 @@ export default function CanvasBoard({ color = '#000', lineWidth = 5, tool = 'bru
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
         contextRef.current = ctx;
+
+        const handleResize = () => {
+            const newRect = canvas.getBoundingClientRect();
+            // Save the current canvas content
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            // Update canvas dimensions
+            canvas.width = newRect.width * dpr;
+            canvas.height = newRect.height * dpr;
+
+            // Restore content and reapply context settings
+            ctx.putImageData(imageData, 0, 0); // Restore content attempt (simple)
+            ctx.scale(dpr, dpr);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []); // Run once on mount to setup
 
     useEffect(() => {
