@@ -13,45 +13,53 @@ export default function CanvasBoard({ color = '#000', lineWidth = 5, tool = 'bru
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
 
+        // Initial setup
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
 
         const ctx = canvas.getContext('2d');
+
+        // Default styles
         ctx.scale(dpr, dpr);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
         contextRef.current = ctx;
 
         const handleResize = () => {
+            // Simple resize handling
             const newRect = canvas.getBoundingClientRect();
-            // Save the current canvas content
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-            // Update canvas dimensions
             canvas.width = newRect.width * dpr;
             canvas.height = newRect.height * dpr;
-
-            // Restore content and reapply context settings
-            ctx.putImageData(imageData, 0, 0); // Restore content attempt (simple)
             ctx.scale(dpr, dpr);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-            ctx.strokeStyle = color;
+            // Re-apply current tool settings
+            if (tool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = color;
+            }
             ctx.lineWidth = lineWidth;
         };
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, []); // Run once on mount to setup
+    }, []);
 
+    // Update Tool/Color/Size whenever they change
     useEffect(() => {
-        if (contextRef.current) {
-            contextRef.current.strokeStyle = tool === 'eraser' ? '#ffffff' : color;
-            contextRef.current.lineWidth = lineWidth;
+        const ctx = contextRef.current;
+        if (!ctx) return;
+
+        if (tool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out'; // True erasering (transparency)
+        } else {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.strokeStyle = color;
         }
-    }, [color, lineWidth, tool]);
+        ctx.lineWidth = lineWidth;
+    }, [color, tool, lineWidth]);
 
     const startDrawing = ({ nativeEvent }) => {
         const { offsetX, offsetY } = nativeEvent;
